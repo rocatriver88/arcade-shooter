@@ -14,10 +14,56 @@ const finalScoreElement = document.getElementById('final-score');
 const startBtn = document.getElementById('start-btn');
 const restartBtn = document.getElementById('restart-btn');
 
+// --- Feature F-04: Image Assets ---
+const images = {
+    player: new Image(),
+    enemy: new Image(),
+    boss: new Image()
+};
+
+let imagesLoaded = 0;
+function processImage(src, callback) {
+    let raw = new Image();
+    raw.src = src;
+    raw.onload = () => {
+        let tempCanvas = document.createElement('canvas');
+        tempCanvas.width = raw.width;
+        tempCanvas.height = raw.height;
+        let tCtx = tempCanvas.getContext('2d');
+        tCtx.drawImage(raw, 0, 0);
+        let imgData = tCtx.getImageData(0, 0, raw.width, raw.height);
+        let data = imgData.data;
+        for (let i = 0; i < data.length; i += 4) {
+            // Remove pure white/near-white backgrounds from AI generation
+            if (data[i] > 240 && data[i+1] > 240 && data[i+2] > 240) data[i+3] = 0;
+        }
+        tCtx.putImageData(imgData, 0, 0);
+        let processedImg = new Image();
+        processedImg.onload = callback;
+        processedImg.src = tempCanvas.toDataURL('image/png');
+    };
+}
+
+startBtn.innerText = "加载中...";
+startBtn.disabled = true;
+
+processImage('assets/player.png', e => { images.player = e.target; checkImages(); });
+processImage('assets/enemy.png', e => { images.enemy = e.target; checkImages(); });
+processImage('assets/boss.png', e => { images.boss = e.target; checkImages(); });
+
+function checkImages() {
+    imagesLoaded++;
+    if(imagesLoaded === 3) {
+        startBtn.innerText = "开始游戏";
+        startBtn.disabled = false;
+    }
+}
+
 // --- Feature F-03: Web Audio API Sound Effects ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function playTone(freq, type, duration, vol=0.1) {
+    return; // Feature F-05: Muted Audio System per user request
     if (audioCtx.state === 'suspended') audioCtx.resume();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
@@ -156,18 +202,12 @@ class Player {
     }
     draw(ctx) {
         if (this.invulnerable && Math.floor(performance.now() / 100) % 2 === 0) return;
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.moveTo(this.x + this.width / 2, this.y);
-        ctx.lineTo(this.x + this.width, this.y + this.height);
-        ctx.lineTo(this.x, this.y + this.height);
-        ctx.closePath();
-        ctx.fill();
+        ctx.drawImage(images.player, this.x - 10, this.y - 10, this.width + 20, this.height + 20); // slightly enlarged for modern look
         
-        ctx.fillStyle = '#f90';
+        ctx.fillStyle = '#0ff'; // changed thruster fire color to match cyan ship
         ctx.beginPath();
-        ctx.moveTo(this.x + this.width / 2 - 10, this.y + this.height);
-        ctx.lineTo(this.x + this.width / 2 + 10, this.y + this.height);
+        ctx.moveTo(this.x + this.width / 2 - 10, this.y + this.height - 5);
+        ctx.lineTo(this.x + this.width / 2 + 10, this.y + this.height - 5);
         ctx.lineTo(this.x + this.width / 2, this.y + this.height + 15 + Math.random() * 10);
         ctx.closePath();
         ctx.fill();
@@ -235,14 +275,11 @@ class Enemy {
         if (this.y > canvas.height) this.active = false;
     }
     draw(ctx) {
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.moveTo(this.x + this.width / 2, this.y);
-        ctx.lineTo(this.x + this.width, this.y + this.height / 2);
-        ctx.lineTo(this.x + this.width / 2, this.y + this.height);
-        ctx.lineTo(this.x, this.y + this.height / 2);
-        ctx.closePath();
-        ctx.fill();
+        ctx.save();
+        ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+        ctx.rotate(Math.PI); // rotate 180 degrees so that top-down asset faces downwards
+        ctx.drawImage(images.enemy, -this.width / 2 - 10, -this.height / 2 - 10, this.width + 20, this.height + 20);
+        ctx.restore();
     }
 }
 
@@ -292,12 +329,12 @@ class Boss {
         }
     }
     draw(ctx) {
-        ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-        ctx.fillStyle = '#ff0';
-        ctx.beginPath();
-        ctx.arc(this.x + this.width/2, this.y + this.height/2 + 10, 15, 0, Math.PI*2);
-        ctx.fill();
+        ctx.save();
+        ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+        ctx.rotate(Math.PI); // rotate 180 degrees
+        ctx.drawImage(images.boss, -this.width / 2 * 1.5, -this.height / 2 * 1.5, this.width * 1.5, this.height * 1.5);
+        ctx.restore();
+        
         ctx.fillStyle = '#333';
         ctx.fillRect(this.x, this.y - 10, this.width, 5);
         ctx.fillStyle = '#0f0';

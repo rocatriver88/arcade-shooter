@@ -31,5 +31,25 @@
       "Create synth powerup sound for item pickup"
     ],
     "passes": true
+  },
+  {
+    "id": "F-04",
+    "category": "art",
+    "description": "Replace geometric shapes with modern spaceship sprites.",
+    "steps": [
+      "Generate modern sprite assets for player, enemy, and boss",
+      "Process images to remove black backgrounds via hidden canvas",
+      "Replace fillRect/beginPath logic with drawImage in game.js"
+    ],
+    "passes": true
+  },
+  {
+    "id": "F-05",
+    "category": "audio",
+    "description": "Disable all synthetic sound effects.",
+    "steps": [
+      "Comment out or return early in the sfx object calls"
+    ],
+    "passes": true
   }
 ]

@@ -13,5 +13,8 @@ Completed:
 - [F-02] Object Pooling implementation for ALL game entities.
 - [F-03] Web Audio API procedural sound effects.
 
-Next Focus:
-- All items in `feature_list.json` are now complete! The project has reached RC (Release Candidate) state.
+Current Phase: Art Overhaul & Refinement
+
+Pending:
+- [F-04] Modern sprite replacement for all ships.
+- [F-05] Mute audio system.
