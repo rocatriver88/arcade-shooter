@@ -1,0 +1,14 @@
+Project: Star Assault (Arcade Shooter)
+Current Phase: Harness Initialization & Polish
+
+Completed:
+- Basic game engine (canvas, update, draw, deltaTime loop).
+- Player ship (mouse/touch pointer controls, auto-shooting, triple-shot W upgrade).
+- Enemy spawning and sinewave movement.
+- Boss system (phases, scatter bullets, progressing levels).
+- Item drops (Weapon upgrade, Health pickup).
+- Particle effects and AABB collision.
+
+Next Focus:
+- We are transitioning to the standard R&D agentic process.
+- We will select features from `feature_list.json` to process incrementally.
