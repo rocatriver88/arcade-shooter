@@ -8,6 +8,7 @@ const scoreDisplay = document.getElementById('score-display');
 const livesDisplay = document.getElementById('lives-display');
 const levelDisplay = document.getElementById('level-display');
 const scoreElement = document.getElementById('score');
+const highScoreElement = document.getElementById('high-score');
 const livesElement = document.getElementById('lives');
 const levelElement = document.getElementById('level');
 const finalScoreElement = document.getElementById('final-score');
@@ -32,6 +33,7 @@ let enemiesKilledThisLevel = 0;
 let bossActive = false;
 let bosses = [];
 let enemyBullets = [];
+let highScore = localStorage.getItem('starAssaultHighScore') || 0;
 
 // Input Handling
 const keys = {
@@ -438,6 +440,7 @@ function initGame() {
     bossActive = false;
     updateScore();
     updateLevel();
+    highScoreElement.innerText = highScore;
     player = new Player();
     updateLives();
     bullets = [];
@@ -468,6 +471,12 @@ function startGame() {
 function gameOver() {
     gameState = 'GAMEOVER';
     finalScoreElement.innerText = score;
+    
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('starAssaultHighScore', highScore);
+        highScoreElement.innerText = highScore;
+    }
     
     gameOverScreen.classList.remove('hidden');
     scoreDisplay.classList.add('hidden');

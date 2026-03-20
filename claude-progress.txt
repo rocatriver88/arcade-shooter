@@ -8,7 +8,8 @@ Completed:
 - Boss system (phases, scatter bullets, progressing levels).
 - Item drops (Weapon upgrade, Health pickup).
 - Particle effects and AABB collision.
+- Harness Initialization (git, progress logs).
+- [F-01] LocalStorage High Score implementation.
 
 Next Focus:
-- We are transitioning to the standard R&D agentic process.
-- We will select features from `feature_list.json` to process incrementally.
+- Proceed with F-02 or F-03 from `feature_list.json`.

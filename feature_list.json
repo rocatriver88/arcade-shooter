@@ -1,0 +1,35 @@
+[
+  {
+    "id": "F-01",
+    "category": "feature",
+    "description": "Implement LocalStorage for persisting Highest Score across game reloads.",
+    "steps": [
+      "Read from localStorage on startup",
+      "Update localStorage on gameOver if score > high score",
+      "Display High Score in UI layer alongside current score"
+    ],
+    "passes": true
+  },
+  {
+    "id": "F-02",
+    "category": "performance",
+    "description": "Refactor to use True Object Pooling instead of Array.filter garbage collection.",
+    "steps": [
+      "Create fixed size array for bullets and enemies",
+      "Toggle active state instead of array deletion",
+      "Update render and logic loops to check active state"
+    ],
+    "passes": false
+  },
+  {
+    "id": "F-03",
+    "category": "audio",
+    "description": "Add simple Web Audio API synthetic Sound Effects.",
+    "steps": [
+      "Create synth sound map for shooting",
+      "Create synth explode sound for collisions",
+      "Create synth powerup sound for item pickup"
+    ],
+    "passes": false
+  }
+]
