@@ -19,7 +19,7 @@
       "Toggle active state instead of array deletion",
       "Update render and logic loops to check active state"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "F-03",
@@ -30,6 +30,6 @@
       "Create synth explode sound for collisions",
       "Create synth powerup sound for item pickup"
     ],
-    "passes": false
+    "passes": true
   }
 ]
