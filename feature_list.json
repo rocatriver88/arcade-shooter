@@ -51,5 +51,25 @@
       "Comment out or return early in the sfx object calls"
     ],
     "passes": true
+  },
+  {
+    "id": "F-06",
+    "category": "gameplay",
+    "description": "5 level limit, detailed bosses per level, and victory condition.",
+    "steps": [
+      "Limit currentLevel to 5, trigger Victory instead of loop",
+      "Load diverse boss sprites and render based on level"
+    ],
+    "passes": true
+  },
+  {
+    "id": "F-07",
+    "category": "art",
+    "description": "Replace simple powerup items with modern sprites.",
+    "steps": [
+      "Load item_health and item_weapon sprites",
+      "Draw modern sprites instead of circular shapes"
+    ],
+    "passes": true
   }
 ]

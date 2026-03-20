@@ -13,12 +13,19 @@ const levelElement = document.getElementById('level');
 const finalScoreElement = document.getElementById('final-score');
 const startBtn = document.getElementById('start-btn');
 const restartBtn = document.getElementById('restart-btn');
+const victoryScreen = document.getElementById('victory-screen');
 
-// --- Feature F-04: Image Assets ---
+// --- Feature F-04 / F-06 / F-07: Image Assets ---
 const images = {
     player: new Image(),
     enemy: new Image(),
-    boss: new Image()
+    boss: new Image(),
+    boss2: new Image(),
+    boss3: new Image(),
+    boss4: new Image(),
+    boss5: new Image(),
+    itemWeapon: new Image(),
+    itemHealth: new Image()
 };
 
 let imagesLoaded = 0;
@@ -50,10 +57,16 @@ startBtn.disabled = true;
 processImage('assets/player.png', e => { images.player = e.target; checkImages(); });
 processImage('assets/enemy.png', e => { images.enemy = e.target; checkImages(); });
 processImage('assets/boss.png', e => { images.boss = e.target; checkImages(); });
+processImage('assets/boss2.png', e => { images.boss2 = e.target; checkImages(); });
+processImage('assets/boss3.png', e => { images.boss3 = e.target; checkImages(); });
+processImage('assets/boss4.png', e => { images.boss4 = e.target; checkImages(); });
+processImage('assets/boss5.png', e => { images.boss5 = e.target; checkImages(); });
+processImage('assets/item_weapon.png', e => { images.itemWeapon = e.target; checkImages(); });
+processImage('assets/item_health.png', e => { images.itemHealth = e.target; checkImages(); });
 
 function checkImages() {
     imagesLoaded++;
-    if(imagesLoaded === 3) {
+    if(imagesLoaded === 9) {
         startBtn.innerText = "开始游戏";
         startBtn.disabled = false;
     }
@@ -262,8 +275,8 @@ class Enemy {
         this.speed = Math.random() * 100 + 100;
         this.color = '#f00';
         this.angle = 0;
-        this.angleSpeed = Math.random() * 0.2 + 0.1;
-        this.curve = Math.random() * 2;
+        this.angleSpeed = Math.random() * 0.03 + 0.01;
+        this.curve = Math.random() * 0.5;
         this.active = true;
     }
     update(deltaTime) {
@@ -332,7 +345,16 @@ class Boss {
         ctx.save();
         ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
         ctx.rotate(Math.PI); // rotate 180 degrees
-        ctx.drawImage(images.boss, -this.width / 2 * 1.5, -this.height / 2 * 1.5, this.width * 1.5, this.height * 1.5);
+        
+        let bossImg = images.boss;
+        if (this.level === 2) bossImg = images.boss2;
+        if (this.level === 3) bossImg = images.boss3;
+        if (this.level === 4) bossImg = images.boss4;
+        if (this.level >= 5) bossImg = images.boss5;
+        
+        let scale = this.level === 5 ? 2.0 : 1.5;
+        
+        ctx.drawImage(bossImg, -this.width / 2 * scale, -this.height / 2 * scale, this.width * scale, this.height * scale);
         ctx.restore();
         
         ctx.fillStyle = '#333';
@@ -358,19 +380,12 @@ class Item {
         if (this.y > canvas.height) this.active = false;
     }
     draw(ctx) {
-        ctx.fillStyle = this.color;
         let scale = 1 + Math.sin(this.pulseAngle) * 0.2;
         ctx.save();
         ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
         ctx.scale(scale, scale);
-        ctx.beginPath();
-        ctx.arc(0, 0, this.width / 2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#000';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(this.type === 'weapon' ? 'W' : 'H', 0, 0);
+        let targetImg = this.type === 'weapon' ? images.itemWeapon : images.itemHealth;
+        ctx.drawImage(targetImg, -this.width / 2 - 5, -this.height / 2 - 5, this.width + 10, this.height + 10);
         ctx.restore();
     }
 }
@@ -474,6 +489,23 @@ function gameOver() {
         highScoreElement.innerText = highScore;
     }
     gameOverScreen.classList.remove('hidden');
+    victoryScreen.classList.add('hidden');
+    scoreDisplay.classList.add('hidden');
+    livesDisplay.classList.add('hidden');
+    levelDisplay.classList.add('hidden');
+    cancelAnimationFrame(animationId);
+}
+
+function victory() {
+    gameState = 'VICTORY';
+    document.getElementById('victory-score').innerText = score;
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('starAssaultHighScore', highScore);
+        highScoreElement.innerText = highScore;
+    }
+    victoryScreen.classList.remove('hidden');
+    gameOverScreen.classList.add('hidden');
     scoreDisplay.classList.add('hidden');
     livesDisplay.classList.add('hidden');
     levelDisplay.classList.add('hidden');
@@ -551,14 +583,18 @@ function handleCollisions() {
                          if (item) item.init(boss.x + Math.random() * boss.width, boss.y + Math.random() * boss.height, type);
                     }
                     
-                    currentLevel++;
-                    updateLevel();
-                    enemiesKilledThisLevel = 0;
-                    bossActive = false;
-                    enemySpawnInterval = Math.max(300, 1000 - currentLevel * 100);
-                    if (player.lives < 5) {
-                        player.lives++;
-                        updateLives();
+                    if (currentLevel >= 5) {
+                        victory();
+                    } else {
+                        currentLevel++;
+                        updateLevel();
+                        enemiesKilledThisLevel = 0;
+                        bossActive = false;
+                        enemySpawnInterval = Math.max(300, 1000 - currentLevel * 100);
+                        if (player.lives < 5) {
+                            player.lives++;
+                            updateLives();
+                        }
                     }
                 }
             }

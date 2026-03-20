@@ -13,8 +13,11 @@ Completed:
 - [F-02] Object Pooling implementation for ALL game entities.
 - [F-03] Web Audio API procedural sound effects.
 
-Current Phase: Art Overhaul & Refinement
+Current Phase: Final Delivery
 
-Pending:
+Completed:
 - [F-04] Modern sprite replacement for all ships.
 - [F-05] Mute audio system.
+- [F-06] 5 level cap and individual bosses.
+- [F-07] Modern item sprites.
+- UI/UX Feedback: Enlarged game canvas (720x960) and reduced enemy swaying.

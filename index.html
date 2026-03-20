@@ -8,7 +8,7 @@
 </head>
 <body>
     <div id="game-container">
-        <canvas id="gameCanvas" width="480" height="720"></canvas>
+        <canvas id="gameCanvas" width="720" height="960"></canvas>
         
         <div id="ui-layer">
             <div id="level-display" class="hidden">关卡: <span id="level">1</span></div>
@@ -23,9 +23,16 @@
             </div>
             
             <div id="game-over-screen" class="screen hidden">
-                <h1>游戏结束</h1>
+                <h1 style="color: #f00; text-shadow: 0 0 10px #f00;">游戏结束</h1>
                 <p>最终分数: <span id="final-score">0</span></p>
                 <button id="restart-btn">重新开始</button>
+            </div>
+            
+            <div id="victory-screen" class="screen hidden">
+                <h1 style="color: #0f0; text-shadow: 0 0 10px #0f0;">任务完成！</h1>
+                <p>你拯救了星际！</p>
+                <p>最终分数: <span id="victory-score">0</span></p>
+                <button onclick="startGame()">再次游玩</button>
             </div>
         </div>
     </div>
