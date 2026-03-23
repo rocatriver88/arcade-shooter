@@ -901,7 +901,10 @@ function handleCollisions() {
                         else if (roll > 0.25) type = 'laser';
                         else if (roll > 0.0) type = 'spread';
                         let item = itemsPool.get();
-                        if (item) item.init(enemy.x + enemy.width / 2 - 10, enemy.y + enemy.height / 2 - 10, type);
+                        if (item) {
+                            console.log("DROPPED ITEM:", type);
+                            item.init(enemy.x + enemy.width / 2 - 10, enemy.y + enemy.height / 2 - 10, type);
+                        }
                     }
                 }
             });
@@ -1062,6 +1065,9 @@ function update(deltaTime) {
     }
     
     bulletsPool.update(deltaTime);
+    homingBulletsPool.update(deltaTime);
+    laserBulletsPool.update(deltaTime);
+    spreadBulletsPool.update(deltaTime);
     enemiesPool.update(deltaTime);
     bossesPool.update(deltaTime);
     enemyBulletsPool.update(deltaTime);
@@ -1092,6 +1098,9 @@ function render(deltaTime) {
     itemsPool.draw(ctx);
     particlesPool.draw(ctx);
     bulletsPool.draw(ctx);
+    homingBulletsPool.draw(ctx);
+    laserBulletsPool.draw(ctx);
+    spreadBulletsPool.draw(ctx);
     enemyBulletsPool.draw(ctx);
     enemiesPool.draw(ctx);
     bossesPool.draw(ctx);
