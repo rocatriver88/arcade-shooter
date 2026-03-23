@@ -81,7 +81,7 @@
       "Implement triggerBomb logic killing all normal enemies",
       "Add UI tracking count and trigger button"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "F-09",
@@ -92,7 +92,7 @@
       "Implement Energy Shield (one hit absorb)",
       "Implement Invincibility Shield (5s timer + touch kill)"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "F-10",
@@ -102,6 +102,6 @@
       "Implement Web Audio API multi-channel sequencer logic",
       "Add interactive audio toggle button to HUD"
     ],
-    "passes": false
+    "passes": true
   }
 ]
