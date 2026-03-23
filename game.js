@@ -348,7 +348,7 @@ class EnemyBullet {
 class Enemy {
     constructor() { this.active = false; }
     init() {
-        this.width = 40; this.height = 40;
+        this.width = 60; this.height = 60;
         this.x = Math.random() * (canvas.width - this.width);
         this.y = -this.height;
         this.speed = Math.random() * 100 + 100;
