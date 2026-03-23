@@ -369,7 +369,7 @@ class Enemy {
     draw(ctx) {
         ctx.save();
         ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
-        ctx.rotate(Math.PI); // rotate 180 degrees so that top-down asset faces downwards
+        // Removed rotation because the new image natively points downwards
         ctx.drawImage(images.enemy, -this.width / 2 - 10, -this.height / 2 - 10, this.width + 20, this.height + 20);
         ctx.restore();
     }
@@ -447,7 +447,7 @@ class Item {
     constructor() { this.active = false; }
     init(x, y, type) {
         this.x = x; this.y = y; this.type = type;
-        this.width = 25; this.height = 25;
+        this.width = 40; this.height = 40;
         this.speed = 100;
         this.pulseAngle = 0;
         this.active = true;
