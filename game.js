@@ -788,12 +788,12 @@ function dealBossDamage(boss, damage) {
         for(let i=0; i<3; i++) {
              let roll = Math.random();
              let type = 'health';
-             if (roll > 0.9) type = 'shield_red';
-             else if (roll > 0.8) type = 'shield_blue';
-             else if (roll > 0.7) type = 'bomb';
-             else if (roll > 0.5) type = 'homing';
-             else if (roll > 0.3) type = 'laser';
-             else if (roll > 0.1) type = 'spread';
+             if (roll > 0.95) type = 'shield_red';
+             else if (roll > 0.85) type = 'shield_blue';
+             else if (roll > 0.75) type = 'bomb';
+             else if (roll > 0.50) type = 'homing';
+             else if (roll > 0.25) type = 'laser';
+             else if (roll > 0.0) type = 'spread';
              
              let item = itemsPool.get();
              if (item) item.init(boss.x + Math.random() * boss.width, boss.y + Math.random() * boss.height, type);
@@ -888,16 +888,15 @@ function handleCollisions() {
                     sfx.explode();
                     createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#f00', 15);
                     
-                    if (Math.random() < 0.15) {
+                    if (Math.random() < 0.25) {
                         let roll = Math.random();
                         let type = 'weapon';
                         if (roll > 0.95) type = 'shield_red';
                         else if (roll > 0.85) type = 'shield_blue';
                         else if (roll > 0.75) type = 'bomb';
-                        else if (roll > 0.6) type = 'homing';
-                        else if (roll > 0.45) type = 'laser';
-                        else if (roll > 0.3) type = 'spread';
-                        else if (roll > 0.1) type = 'health';
+                        else if (roll > 0.50) type = 'homing';
+                        else if (roll > 0.25) type = 'laser';
+                        else if (roll > 0.0) type = 'spread';
                         let item = itemsPool.get();
                         if (item) item.init(enemy.x + enemy.width / 2 - 10, enemy.y + enemy.height / 2 - 10, type);
                     }
