@@ -289,7 +289,8 @@ class Player {
             ctx.fill();
         } else if (this.shieldType === 'invincible') {
             ctx.beginPath();
-            ctx.arc(dx + this.width/2, dy + this.height/2, this.width + 10 + Math.random()*10, 0, Math.PI*2);
+            let pulse = Math.sin(performance.now() / 100) * 5 + 5;
+            ctx.arc(dx + this.width/2, dy + this.height/2, this.width + 10 + pulse, 0, Math.PI*2);
             ctx.strokeStyle = 'rgba(255, 0, 0, 0.9)';
             ctx.lineWidth = 5;
             ctx.stroke();
@@ -303,7 +304,8 @@ class Player {
         ctx.beginPath();
         ctx.moveTo(dx + this.width / 2 - 10, dy + this.height - 5);
         ctx.lineTo(dx + this.width / 2 + 10, dy + this.height - 5);
-        ctx.lineTo(dx + this.width / 2, dy + this.height + 15 + Math.random() * 10);
+        let flamePulse = Math.sin(performance.now() / 50) * 5 + 5;
+        ctx.lineTo(dx + this.width / 2, dy + this.height + 15 + flamePulse);
         ctx.closePath();
         ctx.fill();
     }
