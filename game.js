@@ -33,7 +33,10 @@ const images = {
     itemHealth: new Image(),
     itemBomb: new Image(),
     itemShieldBlue: new Image(),
-    itemShieldRed: new Image()
+    itemShieldRed: new Image(),
+    itemHoming: new Image(),
+    itemLaser: new Image(),
+    itemSpread: new Image()
 };
 
 let imagesLoaded = 0;
@@ -74,10 +77,13 @@ processImage('assets/item_health.png', e => { images.itemHealth = e.target; chec
 processImage('assets/item_bomb.png', e => { images.itemBomb = e.target; checkImages(); });
 processImage('assets/item_shield_blue.png', e => { images.itemShieldBlue = e.target; checkImages(); });
 processImage('assets/item_shield_red.png', e => { images.itemShieldRed = e.target; checkImages(); });
+processImage('assets/item_homing.png', e => { images.itemHoming = e.target; checkImages(); });
+processImage('assets/item_laser.png', e => { images.itemLaser = e.target; checkImages(); });
+processImage('assets/item_spread.png', e => { images.itemSpread = e.target; checkImages(); });
 
 function checkImages() {
     imagesLoaded++;
-    if(imagesLoaded === 12) {
+    if(imagesLoaded === 15) {
         startBtn.innerText = "开始游戏";
         startBtn.disabled = false;
     }
@@ -231,6 +237,7 @@ class Player {
         this.y = canvas.height - this.height - 20;
         this.lives = 3;
         this.weaponLevel = 1;
+        this.weaponType = 'default';
         this.bombs = 3;
         this.shieldType = null;
         this.shieldTimer = 0;
@@ -262,15 +269,37 @@ class Player {
     }
     shoot() {
         sfx.shoot();
-        if (this.weaponLevel === 1) {
-            let b = bulletsPool.get(); if (b) b.init(this.x + this.width / 2, this.y);
-        } else if (this.weaponLevel === 2) {
-            let b1 = bulletsPool.get(); if (b1) b1.init(this.x + this.width * 0.25, this.y);
-            let b2 = bulletsPool.get(); if (b2) b2.init(this.x + this.width * 0.75, this.y);
-        } else {
-            let b1 = bulletsPool.get(); if (b1) b1.init(this.x + this.width * 0.25, this.y, -100);
-            let b2 = bulletsPool.get(); if (b2) b2.init(this.x + this.width / 2, this.y);
-            let b3 = bulletsPool.get(); if (b3) b3.init(this.x + this.width * 0.75, this.y, 100);
+        if (this.weaponType === 'default') {
+            if (this.weaponLevel === 1) {
+                let b = bulletsPool.get(); if (b) b.init(this.x + this.width / 2, this.y);
+            } else if (this.weaponLevel === 2) {
+                let b1 = bulletsPool.get(); if (b1) b1.init(this.x + this.width * 0.25, this.y);
+                let b2 = bulletsPool.get(); if (b2) b2.init(this.x + this.width * 0.75, this.y);
+            } else {
+                let b1 = bulletsPool.get(); if (b1) b1.init(this.x + this.width * 0.25, this.y, -100);
+                let b2 = bulletsPool.get(); if (b2) b2.init(this.x + this.width / 2, this.y);
+                let b3 = bulletsPool.get(); if (b3) b3.init(this.x + this.width * 0.75, this.y, 100);
+            }
+        } else if (this.weaponType === 'homing') {
+            let count = this.weaponLevel === 1 ? 2 : (this.weaponLevel === 2 ? 3 : 5);
+            for(let i=0; i<count; i++) {
+                let hb = homingBulletsPool.get();
+                if (hb) hb.init(this.x + this.width/2 + (i - (count-1)/2)*15, this.y);
+            }
+        } else if (this.weaponType === 'laser') {
+            let lb = laserBulletsPool.get();
+            if (lb) lb.init(this.x + this.width/2, this.y, this.weaponLevel);
+        } else if (this.weaponType === 'spread') {
+            let count = this.weaponLevel === 1 ? 3 : (this.weaponLevel === 2 ? 5 : 7);
+            let spreadAngle = 70 * (Math.PI / 180);
+            let startA = - spreadAngle / 2;
+            let step = spreadAngle / (count - 1);
+            for(let i=0; i<count; i++) {
+                let sb = spreadBulletsPool.get();
+                let angle = startA + step * i;
+                let speed = 600;
+                if (sb) sb.init(this.x + this.width/2, this.y, Math.sin(angle)*speed, -Math.cos(angle)*speed);
+            }
         }
     }
     draw(ctx) {
@@ -327,6 +356,111 @@ class Bullet {
     draw(ctx) {
         ctx.fillStyle = this.color;
         ctx.fillRect(this.x - this.width / 2, this.y, this.width, this.height);
+    }
+}
+
+class HomingBullet {
+    constructor() { this.active = false; }
+    init(x, y) {
+        this.x = x; this.y = y; this.vx = 0; this.vy = -400;
+        this.width = 6; this.height = 15;
+        this.speed = 500; this.color = '#f0f';
+        this.active = true;
+        this.target = null;
+    }
+    update(deltaTime) {
+        if (!this.target || !this.target.active) {
+            let closestDst = Infinity;
+            this.target = null;
+            enemiesPool.pool.forEach(e => {
+                if(e.active) {
+                    let dst = Math.hypot(e.x - this.x, e.y - this.y);
+                    if(dst < closestDst) { closestDst = dst; this.target = e; }
+                }
+            });
+            bossesPool.pool.forEach(b => {
+                if(b.active) {
+                    let dst = Math.hypot(b.x - this.x, b.y - this.y);
+                    if(dst < closestDst) { closestDst = dst; this.target = b; }
+                }
+            });
+        }
+        
+        if (this.target && this.target.active) {
+            let tx = this.target.x + this.target.width/2;
+            let ty = this.target.y + this.target.height/2;
+            let angle = Math.atan2(ty - this.y, tx - this.x);
+            let desiredVx = Math.cos(angle) * this.speed;
+            let desiredVy = Math.sin(angle) * this.speed;
+            this.vx += (desiredVx - this.vx) * 5 * (deltaTime/1000);
+            this.vy += (desiredVy - this.vy) * 5 * (deltaTime/1000);
+            let currentSpeed = Math.hypot(this.vx, this.vy);
+            if (currentSpeed > 0) {
+                this.vx = (this.vx / currentSpeed) * this.speed;
+                this.vy = (this.vy / currentSpeed) * this.speed;
+            }
+        }
+        
+        this.x += this.vx * deltaTime / 1000;
+        this.y += this.vy * deltaTime / 1000;
+        if (this.y < -this.height || this.x < -this.width || this.x > canvas.width || this.y > canvas.height) this.active = false;
+    }
+    draw(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.save();
+        ctx.translate(Math.floor(this.x), Math.floor(this.y));
+        ctx.rotate(Math.atan2(this.vy, this.vx) + Math.PI/2);
+        ctx.fillRect(-this.width/2, -this.height, this.width, this.height);
+        ctx.restore();
+    }
+}
+
+class LaserBullet {
+    constructor() { this.active = false; }
+    init(x, y, level) {
+        this.x = x; this.y = y;
+        this.width = level === 1 ? 6 : (level === 2 ? 12 : 20);
+        this.height = canvas.height;
+        this.color = '#0ff';
+        this.active = true;
+        this.life = 0.1;
+    }
+    update(deltaTime) {
+        this.life -= deltaTime / 1000;
+        if (this.life <= 0) this.active = false;
+        if (player) {
+            this.x = player.x + player.width / 2;
+            this.y = player.y; 
+        }
+    }
+    draw(ctx) {
+        let dx = Math.floor(this.x);
+        let dy = Math.floor(this.y);
+        ctx.fillStyle = `rgba(0, 255, 255, ${Math.min(1.0, this.life * 10)})`;
+        ctx.fillRect(Math.floor(dx - this.width/2), 0, this.width, dy);
+    }
+}
+
+class SpreadBullet {
+    constructor() { this.active = false; }
+    init(x, y, vx, vy) {
+        this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+        this.width = 8; this.height = 8;
+        this.color = '#0f0';
+        this.active = true;
+        this.life = 0.35;
+    }
+    update(deltaTime) {
+        this.x += this.vx * deltaTime / 1000;
+        this.y += this.vy * deltaTime / 1000;
+        this.life -= deltaTime / 1000;
+        if (this.life <= 0) this.active = false;
+    }
+    draw(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(Math.floor(this.x), Math.floor(this.y), this.width/2, 0, Math.PI*2);
+        ctx.fill();
     }
 }
 
@@ -518,6 +652,9 @@ function createExplosion(x, y, color, count) {
 // Pool instantiation
 let player = new Player();
 let bulletsPool = new ObjectPool(() => new Bullet(), 100);
+let homingBulletsPool = new ObjectPool(() => new HomingBullet(), 150);
+let laserBulletsPool = new ObjectPool(() => new LaserBullet(), 5);
+let spreadBulletsPool = new ObjectPool(() => new SpreadBullet(), 200);
 let enemiesPool = new ObjectPool(() => new Enemy(), 100);
 let particlesPool = new ObjectPool(() => new Particle(), 300);
 let itemsPool = new ObjectPool(() => new Item(), 20);
@@ -548,6 +685,9 @@ function initGame() {
     if(typeof updateBombs === 'function') updateBombs();
     
     bulletsPool.clear();
+    homingBulletsPool.clear();
+    laserBulletsPool.clear();
+    spreadBulletsPool.clear();
     enemiesPool.clear();
     particlesPool.clear();
     itemsPool.clear();
@@ -648,9 +788,12 @@ function dealBossDamage(boss, damage) {
         for(let i=0; i<3; i++) {
              let roll = Math.random();
              let type = 'health';
-             if (roll > 0.8) type = 'shield_red';
-             else if (roll > 0.6) type = 'bomb';
-             else if (roll > 0.3) type = 'shield_blue';
+             if (roll > 0.9) type = 'shield_red';
+             else if (roll > 0.8) type = 'shield_blue';
+             else if (roll > 0.7) type = 'bomb';
+             else if (roll > 0.5) type = 'homing';
+             else if (roll > 0.3) type = 'laser';
+             else if (roll > 0.1) type = 'spread';
              
              let item = itemsPool.get();
              if (item) item.init(boss.x + Math.random() * boss.width, boss.y + Math.random() * boss.height, type);
@@ -729,13 +872,55 @@ function takeDamage() {
 }
 
 function handleCollisions() {
-    bulletsPool.pool.forEach(bullet => {
-        if (!bullet.active) return;
+    let standardBullets = [bulletsPool.pool, homingBulletsPool.pool, spreadBulletsPool.pool];
+    standardBullets.forEach(pool => {
+        pool.forEach(bullet => {
+            if (!bullet.active) return;
+            
+            enemiesPool.pool.forEach(enemy => {
+                if (!enemy.active) return;
+                if (checkCollision(bullet, enemy)) {
+                    bullet.active = false;
+                    enemy.active = false;
+                    score += 10;
+                    enemiesKilledThisLevel++;
+                    updateScore();
+                    sfx.explode();
+                    createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#f00', 15);
+                    
+                    if (Math.random() < 0.15) {
+                        let roll = Math.random();
+                        let type = 'weapon';
+                        if (roll > 0.95) type = 'shield_red';
+                        else if (roll > 0.85) type = 'shield_blue';
+                        else if (roll > 0.75) type = 'bomb';
+                        else if (roll > 0.6) type = 'homing';
+                        else if (roll > 0.45) type = 'laser';
+                        else if (roll > 0.3) type = 'spread';
+                        else if (roll > 0.1) type = 'health';
+                        let item = itemsPool.get();
+                        if (item) item.init(enemy.x + enemy.width / 2 - 10, enemy.y + enemy.height / 2 - 10, type);
+                    }
+                }
+            });
+            
+            bossesPool.pool.forEach(boss => {
+                if (!boss.active) return;
+                if (checkCollision(bullet, boss)) {
+                    bullet.active = false;
+                    dealBossDamage(boss, 10);
+                }
+            });
+        });
+    });
+
+    laserBulletsPool.pool.forEach(laser => {
+        if (!laser.active) return;
+        let laserBox = { x: laser.x - laser.width/2, y: 0, width: laser.width, height: player.y };
         
         enemiesPool.pool.forEach(enemy => {
             if (!enemy.active) return;
-            if (checkCollision(bullet, enemy)) {
-                bullet.active = false;
+            if (checkCollision(laserBox, enemy)) {
                 enemy.active = false;
                 score += 10;
                 enemiesKilledThisLevel++;
@@ -746,10 +931,13 @@ function handleCollisions() {
                 if (Math.random() < 0.15) {
                     let roll = Math.random();
                     let type = 'weapon';
-                    if (roll > 0.9) type = 'shield_red';
-                    else if (roll > 0.75) type = 'shield_blue';
-                    else if (roll > 0.6) type = 'bomb';
-                    else if (roll > 0.4) type = 'health';
+                    if (roll > 0.95) type = 'shield_red';
+                    else if (roll > 0.85) type = 'shield_blue';
+                    else if (roll > 0.75) type = 'bomb';
+                    else if (roll > 0.6) type = 'homing';
+                    else if (roll > 0.45) type = 'laser';
+                    else if (roll > 0.3) type = 'spread';
+                    else if (roll > 0.1) type = 'health';
                     let item = itemsPool.get();
                     if (item) item.init(enemy.x + enemy.width / 2 - 10, enemy.y + enemy.height / 2 - 10, type);
                 }
@@ -758,9 +946,8 @@ function handleCollisions() {
         
         bossesPool.pool.forEach(boss => {
             if (!boss.active) return;
-            if (checkCollision(bullet, boss)) {
-                bullet.active = false;
-                dealBossDamage(boss, 10);
+            if (checkCollision(laserBox, boss)) {
+                dealBossDamage(boss, 1.5);
             }
         });
     });
@@ -812,6 +999,23 @@ function handleCollisions() {
             item.active = false;
             sfx.powerup();
             if (item.type === 'weapon') {
+                if (player.weaponType === 'default') {
+                    if (player.weaponLevel < 3) player.weaponLevel++;
+                } else {
+                    player.weaponType = 'default';
+                    player.weaponLevel = 2;
+                }
+            } else if (item.type === 'homing') {
+                if (player.weaponType !== 'homing') player.weaponLevel = 1;
+                player.weaponType = 'homing';
+                if (player.weaponLevel < 3) player.weaponLevel++;
+            } else if (item.type === 'laser') {
+                if (player.weaponType !== 'laser') player.weaponLevel = 1;
+                player.weaponType = 'laser';
+                if (player.weaponLevel < 3) player.weaponLevel++;
+            } else if (item.type === 'spread') {
+                if (player.weaponType !== 'spread') player.weaponLevel = 1;
+                player.weaponType = 'spread';
                 if (player.weaponLevel < 3) player.weaponLevel++;
             } else if (item.type === 'health') {
                 if (player.lives < 5) {
