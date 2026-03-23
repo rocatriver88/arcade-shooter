@@ -276,9 +276,12 @@ class Player {
     draw(ctx) {
         if (this.invulnerable && Math.floor(performance.now() / 100) % 2 === 0) return;
         
+        let dx = Math.floor(this.x);
+        let dy = Math.floor(this.y);
+
         if (this.shieldType === 'energy') {
             ctx.beginPath();
-            ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width + 5, 0, Math.PI*2);
+            ctx.arc(dx + this.width/2, dy + this.height/2, this.width + 5, 0, Math.PI*2);
             ctx.strokeStyle = 'rgba(0, 255, 255, 0.8)';
             ctx.lineWidth = 4;
             ctx.stroke();
@@ -286,7 +289,7 @@ class Player {
             ctx.fill();
         } else if (this.shieldType === 'invincible') {
             ctx.beginPath();
-            ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width + 10 + Math.random()*10, 0, Math.PI*2);
+            ctx.arc(dx + this.width/2, dy + this.height/2, this.width + 10 + Math.random()*10, 0, Math.PI*2);
             ctx.strokeStyle = 'rgba(255, 0, 0, 0.9)';
             ctx.lineWidth = 5;
             ctx.stroke();
@@ -294,13 +297,13 @@ class Player {
             ctx.fill();
         }
         
-        ctx.drawImage(images.player, this.x - 10, this.y - 10, this.width + 20, this.height + 20); // slightly enlarged for modern look
+        ctx.drawImage(images.player, dx - 10, dy - 10, this.width + 20, this.height + 20);
         
-        ctx.fillStyle = '#0ff'; // changed thruster fire color to match cyan ship
+        ctx.fillStyle = '#0ff';
         ctx.beginPath();
-        ctx.moveTo(this.x + this.width / 2 - 10, this.y + this.height - 5);
-        ctx.lineTo(this.x + this.width / 2 + 10, this.y + this.height - 5);
-        ctx.lineTo(this.x + this.width / 2, this.y + this.height + 15 + Math.random() * 10);
+        ctx.moveTo(dx + this.width / 2 - 10, dy + this.height - 5);
+        ctx.lineTo(dx + this.width / 2 + 10, dy + this.height - 5);
+        ctx.lineTo(dx + this.width / 2, dy + this.height + 15 + Math.random() * 10);
         ctx.closePath();
         ctx.fill();
     }
@@ -368,9 +371,9 @@ class Enemy {
     }
     draw(ctx) {
         ctx.save();
-        ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+        ctx.translate(Math.floor(this.x + this.width / 2), Math.floor(this.y + this.height / 2));
         // Removed rotation because the new image natively points downwards
-        ctx.drawImage(images.enemy, -this.width / 2 - 10, -this.height / 2 - 10, this.width + 20, this.height + 20);
+        ctx.drawImage(images.enemy, Math.floor(-this.width / 2 - 10), Math.floor(-this.height / 2 - 10), this.width + 20, this.height + 20);
         ctx.restore();
     }
 }
@@ -421,9 +424,11 @@ class Boss {
         }
     }
     draw(ctx) {
+        let dx = Math.floor(this.x);
+        let dy = Math.floor(this.y);
         ctx.save();
-        ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
-        ctx.rotate(Math.PI); // rotate 180 degrees
+        ctx.translate(dx + this.width / 2, dy + this.height / 2);
+        ctx.rotate(Math.PI);
         
         let bossImg = images.boss;
         if (this.level === 2) bossImg = images.boss2;
@@ -433,13 +438,13 @@ class Boss {
         
         let scale = this.level === 5 ? 2.0 : 1.5;
         
-        ctx.drawImage(bossImg, -this.width / 2 * scale, -this.height / 2 * scale, this.width * scale, this.height * scale);
+        ctx.drawImage(bossImg, Math.floor(-this.width / 2 * scale), Math.floor(-this.height / 2 * scale), Math.floor(this.width * scale), Math.floor(this.height * scale));
         ctx.restore();
         
         ctx.fillStyle = '#333';
-        ctx.fillRect(this.x, this.y - 10, this.width, 5);
+        ctx.fillRect(dx, Math.floor(dy - 10), Math.floor(this.width), 5);
         ctx.fillStyle = '#0f0';
-        ctx.fillRect(this.x, this.y - 10, this.width * (this.hp / this.maxHp), 5);
+        ctx.fillRect(dx, Math.floor(dy - 10), Math.floor(this.width * (this.hp / this.maxHp)), 5);
     }
 }
 
@@ -460,7 +465,7 @@ class Item {
     draw(ctx) {
         let scale = 1 + Math.sin(this.pulseAngle) * 0.15;
         ctx.save();
-        ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+        ctx.translate(Math.floor(this.x + this.width / 2), Math.floor(this.y + this.height / 2));
         ctx.scale(scale, scale);
         
         let targetImg = images.itemWeapon;
@@ -469,7 +474,7 @@ class Item {
         if (this.type === 'shield_blue') targetImg = images.itemShieldBlue;
         if (this.type === 'shield_red') targetImg = images.itemShieldRed;
         
-        ctx.drawImage(targetImg, -this.width / 2 - 5, -this.height / 2 - 5, this.width + 10, this.height + 10);
+        ctx.drawImage(targetImg, Math.floor(-this.width / 2 - 5), Math.floor(-this.height / 2 - 5), this.width + 10, this.height + 10);
         ctx.restore();
     }
 }
