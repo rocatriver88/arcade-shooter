@@ -39,7 +39,7 @@ const images = {
 let imagesLoaded = 0;
 function processImage(src, callback) {
     let raw = new Image();
-    raw.src = src;
+    raw.src = src + '?v=' + Date.now();
     raw.onload = () => {
         let tempCanvas = document.createElement('canvas');
         tempCanvas.width = raw.width;
@@ -222,7 +222,7 @@ class ObjectPool {
 // --- Entities ---
 class Player {
     constructor() {
-        this.width = 40; this.height = 40;
+        this.width = 60; this.height = 60;
         this.speed = 300; this.color = '#0ff';
         this.init();
     }
