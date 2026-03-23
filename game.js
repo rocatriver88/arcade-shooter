@@ -609,6 +609,9 @@ class Item {
         if (this.type === 'bomb') targetImg = images.itemBomb;
         if (this.type === 'shield_blue') targetImg = images.itemShieldBlue;
         if (this.type === 'shield_red') targetImg = images.itemShieldRed;
+        if (this.type === 'homing') targetImg = images.itemHoming;
+        if (this.type === 'laser') targetImg = images.itemLaser;
+        if (this.type === 'spread') targetImg = images.itemSpread;
         
         ctx.drawImage(targetImg, Math.floor(-this.width / 2 - 5), Math.floor(-this.height / 2 - 5), this.width + 10, this.height + 10);
         ctx.restore();
