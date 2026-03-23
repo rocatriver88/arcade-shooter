@@ -232,7 +232,6 @@ class Player {
         this.lives = 3;
         this.weaponLevel = 1;
         this.bombs = 3;
-        if(typeof updateBombs === 'function') updateBombs();
         this.shieldType = null;
         this.shieldTimer = 0;
         this.lastShotTime = 0;
@@ -539,6 +538,7 @@ function initGame() {
     
     player.init();
     updateLives();
+    if(typeof updateBombs === 'function') updateBombs();
     
     bulletsPool.clear();
     enemiesPool.clear();
