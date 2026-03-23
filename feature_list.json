@@ -71,5 +71,37 @@
       "Draw modern sprites instead of circular shapes"
     ],
     "passes": true
+  },
+  {
+    "id": "F-08",
+    "category": "gameplay",
+    "description": "Screen clearing Bomb system.",
+    "steps": [
+      "Generate bomb item sprite",
+      "Implement triggerBomb logic killing all normal enemies",
+      "Add UI tracking count and trigger button"
+    ],
+    "passes": false
+  },
+  {
+    "id": "F-09",
+    "category": "gameplay",
+    "description": "Multi-type shield system.",
+    "steps": [
+      "Generate blue and red shield item sprites",
+      "Implement Energy Shield (one hit absorb)",
+      "Implement Invincibility Shield (5s timer + touch kill)"
+    ],
+    "passes": false
+  },
+  {
+    "id": "F-10",
+    "category": "audio",
+    "description": "Procedural background music synthesizer.",
+    "steps": [
+      "Implement Web Audio API multi-channel sequencer logic",
+      "Add interactive audio toggle button to HUD"
+    ],
+    "passes": false
   }
 ]

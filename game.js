@@ -15,6 +15,11 @@ const startBtn = document.getElementById('start-btn');
 const restartBtn = document.getElementById('restart-btn');
 const victoryScreen = document.getElementById('victory-screen');
 
+const bombsDisplay = document.getElementById('bombs-display');
+const bombsElement = document.getElementById('bombs');
+const bombBtn = document.getElementById('bomb-btn');
+const audioToggle = document.getElementById('audio-toggle');
+
 // --- Feature F-04 / F-06 / F-07: Image Assets ---
 const images = {
     player: new Image(),
@@ -25,7 +30,10 @@ const images = {
     boss4: new Image(),
     boss5: new Image(),
     itemWeapon: new Image(),
-    itemHealth: new Image()
+    itemHealth: new Image(),
+    itemBomb: new Image(),
+    itemShieldBlue: new Image(),
+    itemShieldRed: new Image()
 };
 
 let imagesLoaded = 0;
@@ -63,28 +71,58 @@ processImage('assets/boss4.png', e => { images.boss4 = e.target; checkImages(); 
 processImage('assets/boss5.png', e => { images.boss5 = e.target; checkImages(); });
 processImage('assets/item_weapon.png', e => { images.itemWeapon = e.target; checkImages(); });
 processImage('assets/item_health.png', e => { images.itemHealth = e.target; checkImages(); });
+processImage('assets/item_bomb.png', e => { images.itemBomb = e.target; checkImages(); });
+processImage('assets/item_shield_blue.png', e => { images.itemShieldBlue = e.target; checkImages(); });
+processImage('assets/item_shield_red.png', e => { images.itemShieldRed = e.target; checkImages(); });
 
 function checkImages() {
     imagesLoaded++;
-    if(imagesLoaded === 9) {
+    if(imagesLoaded === 12) {
         startBtn.innerText = "开始游戏";
         startBtn.disabled = false;
     }
 }
 
-// --- Feature F-03: Web Audio API Sound Effects ---
+// --- Feature F-10: Web Audio API Sound Effects & BGM ---
+let audioEnabled = false;
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
+audioToggle.addEventListener('click', () => {
+    audioEnabled = !audioEnabled;
+    audioToggle.innerText = audioEnabled ? "🔊 音乐: 开" : "🔊 音乐: 关";
+    if (audioEnabled) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        startBGM();
+    } else {
+        stopBGM();
+    }
+});
+
+let bgmInterval;
+function startBGM() {
+    if (bgmInterval) return;
+    let step = 0;
+    const arp = [110, 130.81, 164.81, 196]; // A2, C3, E3, G3
+    bgmInterval = setInterval(() => {
+        if (!audioEnabled || gameState !== 'PLAYING') return;
+        if (step % 4 === 0) playTone(60, 'sine', 0.1, 0.2);
+        playTone(arp[step % arp.length] * 2, 'square', 0.1, 0.05);
+        step++;
+    }, 200);
+}
+function stopBGM() {
+    clearInterval(bgmInterval);
+    bgmInterval = null;
+}
+
 function playTone(freq, type, duration, vol=0.1) {
-    return; // Feature F-05: Muted Audio System per user request
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    if (!audioEnabled || audioCtx.state === 'suspended') return;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = type;
     osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
     
     if (type === 'noise') {
-        // Pseudo noise sweep
         osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + duration);
     }
     
@@ -100,12 +138,17 @@ const sfx = {
     shoot: () => playTone(800, 'square', 0.1, 0.03),
     enemyShoot: () => playTone(300, 'sawtooth', 0.1, 0.03),
     explode: () => playTone(100, 'noise', 0.3, 0.08),
+    shieldHit: () => playTone(600, 'sine', 0.2, 0.1),
     hit: () => playTone(150, 'square', 0.1, 0.05),
     powerup: () => {
         playTone(400, 'sine', 0.1, 0.05);
         setTimeout(() => playTone(800, 'sine', 0.1, 0.05), 100);
     },
-    bossExplode: () => playTone(50, 'noise', 1.0, 0.15)
+    bossExplode: () => playTone(50, 'noise', 1.0, 0.15),
+    bombExplode: () => {
+        playTone(50, 'noise', 1.5, 0.3);
+        setTimeout(() => playTone(100, 'noise', 1.0, 0.2), 200);
+    }
 };
 
 // --- Game State Vars ---
@@ -119,6 +162,7 @@ let bossActive = false;
 let enemySpawnTimer = 0;
 let enemySpawnInterval = 1000;
 let highScore = localStorage.getItem('starAssaultHighScore') || 0;
+let flashAlpha = 0; // Flash screen effect for Bomb
 
 // Input Handling
 let mouseX = canvas.width / 2;
@@ -135,6 +179,14 @@ canvas.addEventListener('pointermove', (e) => {
 });
 canvas.addEventListener('pointerup', () => isPointerDown = false);
 canvas.addEventListener('pointerleave', () => isPointerDown = false);
+
+window.addEventListener('keydown', e => {
+    if (e.code === 'Space') {
+        e.preventDefault();
+        triggerBomb();
+    }
+});
+bombBtn.addEventListener('click', triggerBomb);
 
 function updatePointer(e) {
     const rect = canvas.getBoundingClientRect();
@@ -179,6 +231,10 @@ class Player {
         this.y = canvas.height - this.height - 20;
         this.lives = 3;
         this.weaponLevel = 1;
+        this.bombs = 3;
+        if(typeof updateBombs === 'function') updateBombs();
+        this.shieldType = null;
+        this.shieldTimer = 0;
         this.lastShotTime = 0;
         this.cooldown = 150;
         this.invulnerable = false;
@@ -188,6 +244,11 @@ class Player {
         if (this.invulnerable) {
             this.invulnerableTimer -= deltaTime;
             if (this.invulnerableTimer <= 0) this.invulnerable = false;
+        }
+        
+        if (this.shieldType === 'invincible') {
+            this.shieldTimer -= deltaTime;
+            if (this.shieldTimer <= 0) this.shieldType = null;
         }
 
         let targetX = mouseX - this.width / 2;
@@ -215,6 +276,25 @@ class Player {
     }
     draw(ctx) {
         if (this.invulnerable && Math.floor(performance.now() / 100) % 2 === 0) return;
+        
+        if (this.shieldType === 'energy') {
+            ctx.beginPath();
+            ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width + 5, 0, Math.PI*2);
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.8)';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(0, 255, 255, 0.2)';
+            ctx.fill();
+        } else if (this.shieldType === 'invincible') {
+            ctx.beginPath();
+            ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width + 10 + Math.random()*10, 0, Math.PI*2);
+            ctx.strokeStyle = 'rgba(255, 0, 0, 0.9)';
+            ctx.lineWidth = 5;
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
+            ctx.fill();
+        }
+        
         ctx.drawImage(images.player, this.x - 10, this.y - 10, this.width + 20, this.height + 20); // slightly enlarged for modern look
         
         ctx.fillStyle = '#0ff'; // changed thruster fire color to match cyan ship
@@ -368,9 +448,8 @@ class Item {
     constructor() { this.active = false; }
     init(x, y, type) {
         this.x = x; this.y = y; this.type = type;
-        this.width = 20; this.height = 20;
+        this.width = 25; this.height = 25;
         this.speed = 100;
-        this.color = type === 'weapon' ? '#f0f' : '#0f0';
         this.pulseAngle = 0;
         this.active = true;
     }
@@ -380,11 +459,17 @@ class Item {
         if (this.y > canvas.height) this.active = false;
     }
     draw(ctx) {
-        let scale = 1 + Math.sin(this.pulseAngle) * 0.2;
+        let scale = 1 + Math.sin(this.pulseAngle) * 0.15;
         ctx.save();
         ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
         ctx.scale(scale, scale);
-        let targetImg = this.type === 'weapon' ? images.itemWeapon : images.itemHealth;
+        
+        let targetImg = images.itemWeapon;
+        if (this.type === 'health') targetImg = images.itemHealth;
+        if (this.type === 'bomb') targetImg = images.itemBomb;
+        if (this.type === 'shield_blue') targetImg = images.itemShieldBlue;
+        if (this.type === 'shield_red') targetImg = images.itemShieldRed;
+        
         ctx.drawImage(targetImg, -this.width / 2 - 5, -this.height / 2 - 5, this.width + 10, this.height + 10);
         ctx.restore();
     }
@@ -447,6 +532,7 @@ function initGame() {
     currentLevel = 1;
     enemiesKilledThisLevel = 0;
     bossActive = false;
+    flashAlpha = 0;
     updateScore();
     updateLevel();
     highScoreElement.innerText = highScore;
@@ -474,9 +560,16 @@ function startGame() {
     scoreDisplay.classList.remove('hidden');
     livesDisplay.classList.remove('hidden');
     levelDisplay.classList.remove('hidden');
+    bombsDisplay.classList.remove('hidden');
+    bombBtn.classList.remove('hidden');
+    audioToggle.classList.remove('hidden');
     
     lastTime = performance.now();
     cancelAnimationFrame(animationId);
+    if (audioEnabled) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        startBGM();
+    }
     gameLoop(lastTime);
 }
 
@@ -488,11 +581,14 @@ function gameOver() {
         localStorage.setItem('starAssaultHighScore', highScore);
         highScoreElement.innerText = highScore;
     }
+    stopBGM();
     gameOverScreen.classList.remove('hidden');
     victoryScreen.classList.add('hidden');
     scoreDisplay.classList.add('hidden');
     livesDisplay.classList.add('hidden');
     levelDisplay.classList.add('hidden');
+    bombsDisplay.classList.add('hidden');
+    bombBtn.classList.add('hidden');
     cancelAnimationFrame(animationId);
 }
 
@@ -504,17 +600,21 @@ function victory() {
         localStorage.setItem('starAssaultHighScore', highScore);
         highScoreElement.innerText = highScore;
     }
+    stopBGM();
     victoryScreen.classList.remove('hidden');
     gameOverScreen.classList.add('hidden');
     scoreDisplay.classList.add('hidden');
     livesDisplay.classList.add('hidden');
     levelDisplay.classList.add('hidden');
+    bombsDisplay.classList.add('hidden');
+    bombBtn.classList.add('hidden');
     cancelAnimationFrame(animationId);
 }
 
 function updateScore() { scoreElement.innerText = score; }
 function updateLives() { livesElement.innerText = player.lives; }
 function updateLevel() { levelElement.innerText = currentLevel; }
+function updateBombs() { bombsElement.innerText = player.bombs; }
 
 function checkCollision(obj1, obj2) {
     let w1 = obj1.width || 12; let h1 = obj1.height || 12;
@@ -526,11 +626,92 @@ function checkCollision(obj1, obj2) {
     return (x1 < x2 + w2 && x1 + w1 > x2 && y1 < y2 + h2 && y1 + h1 > y2);
 }
 
+function dealBossDamage(boss, damage) {
+    boss.hp -= damage;
+    sfx.hit();
+    createExplosion(boss.x + boss.width/2, boss.y + boss.height/2, '#ff0', 5);
+    
+    if (boss.hp <= 0 && boss.active) {
+        boss.active = false;
+        score += currentLevel * 1000;
+        updateScore();
+        sfx.bossExplode();
+        createExplosion(boss.x + boss.width/2, boss.y + boss.height/2, '#f00', 100);
+        
+        for(let i=0; i<3; i++) {
+             let roll = Math.random();
+             let type = 'health';
+             if (roll > 0.8) type = 'shield_red';
+             else if (roll > 0.6) type = 'bomb';
+             else if (roll > 0.3) type = 'shield_blue';
+             
+             let item = itemsPool.get();
+             if (item) item.init(boss.x + Math.random() * boss.width, boss.y + Math.random() * boss.height, type);
+        }
+        
+        if (currentLevel >= 5) {
+            victory();
+        } else {
+            currentLevel++;
+            updateLevel();
+            enemiesKilledThisLevel = 0;
+            bossActive = false;
+            enemySpawnInterval = Math.max(300, 1000 - currentLevel * 100);
+            if (player.lives < 5) {
+                player.lives++;
+                updateLives();
+            }
+        }
+    }
+}
+
+function triggerBomb() {
+    if (gameState !== 'PLAYING' || player.bombs <= 0 || flashAlpha > 0) return;
+    
+    player.bombs--;
+    updateBombs();
+    
+    flashAlpha = 1.0;
+    sfx.bombExplode();
+    
+    let killedCount = 0;
+    enemiesPool.pool.forEach(enemy => {
+        if (enemy.active) {
+            enemy.active = false;
+            createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#f00', 20);
+            score += 10;
+            killedCount++;
+        }
+    });
+    enemiesKilledThisLevel += killedCount;
+    updateScore();
+    
+    enemyBulletsPool.clear();
+    
+    bossesPool.pool.forEach(boss => {
+        if (boss.active) {
+            dealBossDamage(boss, 200);
+        }
+    });
+}
+
 function takeDamage() {
+    if (player.shieldType === 'invincible') return;
+    
+    if (player.shieldType === 'energy') {
+        player.shieldType = null;
+        sfx.shieldHit();
+        createExplosion(player.x + player.width / 2, player.y + player.height / 2, '#0ff', 40);
+        player.invulnerable = true;
+        player.invulnerableTimer = 1000;
+        return;
+    }
+    
     player.lives -= 1;
     updateLives();
     sfx.explode();
     createExplosion(player.x + player.width / 2, player.y + player.height / 2, '#0ff', 30);
+    
     if (player.lives <= 0) {
         gameOver();
     } else {
@@ -556,7 +737,12 @@ function handleCollisions() {
                 createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#f00', 15);
                 
                 if (Math.random() < 0.15) {
-                    let type = Math.random() > 0.6 ? 'health' : 'weapon';
+                    let roll = Math.random();
+                    let type = 'weapon';
+                    if (roll > 0.9) type = 'shield_red';
+                    else if (roll > 0.75) type = 'shield_blue';
+                    else if (roll > 0.6) type = 'bomb';
+                    else if (roll > 0.4) type = 'health';
                     let item = itemsPool.get();
                     if (item) item.init(enemy.x + enemy.width / 2 - 10, enemy.y + enemy.height / 2 - 10, type);
                 }
@@ -567,58 +753,48 @@ function handleCollisions() {
             if (!boss.active) return;
             if (checkCollision(bullet, boss)) {
                 bullet.active = false;
-                boss.hp -= 10;
-                sfx.hit();
-                createExplosion(bullet.x, bullet.y, '#ff0', 5);
-                if (boss.hp <= 0) {
-                    boss.active = false;
-                    score += currentLevel * 1000;
-                    updateScore();
-                    sfx.bossExplode();
-                    createExplosion(boss.x + boss.width/2, boss.y + boss.height/2, '#f00', 100);
-                    
-                    for(let i=0; i<3; i++) {
-                         let type = Math.random() > 0.5 ? 'health' : 'weapon';
-                         let item = itemsPool.get();
-                         if (item) item.init(boss.x + Math.random() * boss.width, boss.y + Math.random() * boss.height, type);
-                    }
-                    
-                    if (currentLevel >= 5) {
-                        victory();
-                    } else {
-                        currentLevel++;
-                        updateLevel();
-                        enemiesKilledThisLevel = 0;
-                        bossActive = false;
-                        enemySpawnInterval = Math.max(300, 1000 - currentLevel * 100);
-                        if (player.lives < 5) {
-                            player.lives++;
-                            updateLives();
-                        }
-                    }
-                }
+                dealBossDamage(boss, 10);
             }
         });
     });
 
-    if (!player.invulnerable) {
+    if (!player.invulnerable || player.shieldType === 'invincible') {
         enemiesPool.pool.forEach(enemy => {
             if (!enemy.active) return;
             if (checkCollision(player, enemy)) {
-                enemy.active = false;
-                takeDamage();
+                if (player.shieldType === 'invincible') {
+                    enemy.active = false;
+                    score += 10;
+                    enemiesKilledThisLevel++;
+                    updateScore();
+                    sfx.explode();
+                    createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#f00', 15);
+                } else {
+                    enemy.active = false;
+                    takeDamage();
+                }
             }
         });
         
         bossesPool.pool.forEach(boss => {
-            if (boss.active && checkCollision(player, boss)) takeDamage();
+            if (boss.active && checkCollision(player, boss)) {
+                if (player.shieldType === 'invincible') {
+                    dealBossDamage(boss, 5);
+                } else {
+                    takeDamage();
+                }
+            }
         });
         
         enemyBulletsPool.pool.forEach(eb => {
             if (!eb.active) return;
             if (checkCollision(player, eb)) {
                 eb.active = false;
-                takeDamage();
+                if (player.shieldType !== 'invincible') {
+                    takeDamage();
+                } else {
+                    createExplosion(eb.x, eb.y, '#f90', 5);
+                }
             }
         });
     }
@@ -635,6 +811,14 @@ function handleCollisions() {
                     player.lives++;
                     updateLives();
                 }
+            } else if (item.type === 'bomb') {
+                player.bombs++;
+                updateBombs();
+            } else if (item.type === 'shield_blue') {
+                player.shieldType = 'energy';
+            } else if (item.type === 'shield_red') {
+                player.shieldType = 'invincible';
+                player.shieldTimer = 5000;
             }
             score += 50;
             updateScore();
@@ -654,11 +838,13 @@ function update(deltaTime) {
             if (b) b.init(currentLevel);
         }
     } else if (!bossActive) {
-        enemySpawnTimer += deltaTime;
-        if (enemySpawnTimer > enemySpawnInterval) {
-            let e = enemiesPool.get();
-            if (e) e.init();
-            enemySpawnTimer = 0;
+        if (flashAlpha < 0.5) {
+            enemySpawnTimer += deltaTime;
+            if (enemySpawnTimer > enemySpawnInterval) {
+                let e = enemiesPool.get();
+                if (e) e.init();
+                enemySpawnTimer = 0;
+            }
         }
     }
     
@@ -697,6 +883,13 @@ function render(deltaTime) {
     enemiesPool.draw(ctx);
     bossesPool.draw(ctx);
     player.draw(ctx);
+    
+    if (flashAlpha > 0) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${flashAlpha})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        flashAlpha -= deltaTime / 1000;
+        if (flashAlpha < 0) flashAlpha = 0;
+    }
 }
 
 function gameLoop(timestamp) {
