@@ -707,6 +707,7 @@ function startGame() {
     gameState = 'PLAYING';
     startScreen.classList.add('hidden');
     gameOverScreen.classList.add('hidden');
+    victoryScreen.classList.add('hidden');
     scoreDisplay.classList.remove('hidden');
     livesDisplay.classList.remove('hidden');
     levelDisplay.classList.remove('hidden');
