@@ -12,7 +12,7 @@
 | `style.css` | 所有 UI 样式 |
 | `game.js` | 全部游戏逻辑：主循环、状态机、实体类、碰撞、渲染 |
 | `assets/` | 图片素材（PNG） |
-| `REQUIREMENTS.md` / `TECHNICAL_DESIGN.md` | 需求与技术设计。文档可能落后于代码，**两者不一致时以代码为准** |
+| `REQUIREMENTS.md` / `TECHNICAL_DESIGN.md` | 需求与技术设计。文档已落后于代码（例如实体管理已改为对象池），**两者不一致时以代码为准** |
 
 ## 运行与验证
 
@@ -29,7 +29,8 @@
 
 - 保持原生 JS，不引入 npm 包、框架、打包工具或 TypeScript。
 - 运动计算统一乘以 `deltaTime / 1000`，保证不同刷新率下速度一致。
-- 实体销毁统一用 `markedForDeletion = true`，在每帧 `update` 末尾统一过滤，不要在遍历中直接删除。
+- 实体统一用对象池 `ObjectPool` 管理：用 `pool.get()` 取出并 `init()`，回收时设 `this.active = false`（例如越界或生命结束），不要 `new` 临时对象，也不要从数组里删除元素。
+- 新增一种实体时，除了新建对应的 `ObjectPool`，还要把它加进 `initGame()` 的 `clear()`、主循环的 `update` 和 `draw`，漏掉任何一处都会导致实体不动、不显示或重开后残留。
 - 输入统一使用 PointerEvent（`pointerdown` / `pointermove` / `pointerup` / `pointerleave`），不要另加 `mousemove` 或 `touch*` 监听。
 - 碰撞检测沿用现有的 `checkCollision`（AABB），不要另写一套。
 - 沿用现有的命名和代码风格，新代码放在相关的现有函数或类附近。
