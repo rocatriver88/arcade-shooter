@@ -448,13 +448,11 @@ class SpreadBullet {
         this.width = 8; this.height = 8;
         this.color = '#0f0';
         this.active = true;
-        this.life = 0.35;
     }
     update(deltaTime) {
         this.x += this.vx * deltaTime / 1000;
         this.y += this.vy * deltaTime / 1000;
-        this.life -= deltaTime / 1000;
-        if (this.life <= 0) this.active = false;
+        if (this.y < -this.height || this.x < -this.width || this.x > canvas.width || this.y > canvas.height) this.active = false;
     }
     draw(ctx) {
         ctx.fillStyle = this.color;
