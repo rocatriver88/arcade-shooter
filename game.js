@@ -683,7 +683,7 @@ function initGame() {
     
     player.init();
     updateLives();
-    if(typeof updateBombs === 'function') updateBombs();
+    updateBombs();
     
     bulletsPool.clear();
     homingBulletsPool.clear();
