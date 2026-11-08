@@ -705,6 +705,7 @@ function startGame() {
     gameState = 'PLAYING';
     startScreen.classList.add('hidden');
     gameOverScreen.classList.add('hidden');
+    victoryScreen.classList.add('hidden');
     scoreDisplay.classList.remove('hidden');
     livesDisplay.classList.remove('hidden');
     levelDisplay.classList.remove('hidden');
@@ -1114,7 +1115,8 @@ function render(deltaTime) {
 
 function gameLoop(timestamp) {
     if (gameState !== 'PLAYING') return;
-    const deltaTime = timestamp - lastTime;
+    const elapsed = timestamp - lastTime;
+    const deltaTime = elapsed > 100 ? 1000 / 60 : elapsed;
     lastTime = timestamp;
     
     update(deltaTime);
