@@ -58,5 +58,7 @@
 
 按你这次的角色，完整读对应文件并遵守：
 
-- 实现者（写代码、提交 PR）：`.github/agents/implementer.agent.md`
-- 审核者（审核 PR）：`.github/agents/reviewer.agent.md`
+- 实现者（写代码、提交 PR）：`agents/implementer.md`
+- 审核者（审核 PR）：`agents/reviewer.md`
+
+`.github/agents/` 下的同名 `.agent.md` 文件是供 Copilot 选用角色的副本，正文必须与 `agents/` 下的文件保持一致，修改时两处同步。
