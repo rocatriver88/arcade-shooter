@@ -901,7 +901,6 @@ function handleCollisions() {
                         else if (roll > 0.0) type = 'spread';
                         let item = itemsPool.get();
                         if (item) {
-                            console.log("DROPPED ITEM:", type);
                             item.init(enemy.x + enemy.width / 2 - 10, enemy.y + enemy.height / 2 - 10, type);
                         }
                     }
