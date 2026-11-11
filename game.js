@@ -677,6 +677,8 @@ function initGame() {
     enemiesKilledThisLevel = 0;
     bossActive = false;
     flashAlpha = 0;
+    mouseX = canvas.width / 2;
+    mouseY = canvas.height - 60;
     updateScore();
     updateLevel();
     highScoreElement.innerText = highScore;
